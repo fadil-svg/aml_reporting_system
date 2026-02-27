@@ -20,7 +20,7 @@ function severityColor(s: string) {
 
 export default function Dashboard() {
 	const [role, setRole] = useState<Role>("bank");
-
+    const [lastUpdate, setLastUpdate] = useState<string>("");
 	const kpi = useAsync(() => amlAPI.getKPISummary());
 	const topAlerts = useAsync(() => amlAPI.getTopAlerts(5));
 	const realtime = useAsync(() => amlAPI.getRealTimeIndicators());
@@ -35,6 +35,11 @@ export default function Dashboard() {
 			realtime.refetch();
 		}, 10000);
 		return () => clearInterval(iv);
+	}, []);
+
+	// set initial backend update time once on client
+	useEffect(() => {
+		setLastUpdate(new Date().toLocaleTimeString());
 	}, []);
 
 	// Small helper renderers
@@ -97,7 +102,7 @@ export default function Dashboard() {
 					<div key={a.id} style={{ display: "flex", justifyContent: "space-between", padding: 8, borderBottom: "1px solid #111827" }}>
 						<div>
 							<div style={{ fontWeight: 700 }}>{a.title}</div>
-							<div style={{ fontSize: 12, opacity: 0.8 }}>{a.institution} • {new Date(a.timestamp).toLocaleString()}</div>
+							<div style={{ fontSize: 12, opacity: 0.8 }}>{a.institution} • {new Date(a.timestamp).toUTCString()}</div>
 						</div>
 						<div style={{ textAlign: "right" }}>
 							<div style={{ color: severityColor(a.severity), fontWeight: 700 }}>{a.severity.toUpperCase()}</div>
@@ -218,12 +223,12 @@ export default function Dashboard() {
 
 					<div style={{ marginTop: 12 }}>
 						<div style={{ fontSize: 12, opacity: 0.7 }}>Alerts Approaching SLA</div>
-						<div style={{ marginTop: 8, color: "#f97316" }}>-- placeholder (fetch with /alerts?sortBy=slsRemaining)</div>
+						{/* <div style={{ marginTop: 8, color: "#f97316" }}>-- placeholder (fetch with /alerts?sortBy=slsRemaining)</div> */}
 					</div>
 
 					<div style={{ marginTop: 12 }}>
 						<div style={{ fontSize: 12, opacity: 0.7 }}>Recently Escalated</div>
-						<div style={{ marginTop: 8, color: "#ef4444" }}>-- placeholder</div>
+						{/* <div style={{ marginTop: 8, color: "#ef4444" }}>-- placeholder</div> */}
 					</div>
 				</aside>
 			</section>
@@ -265,7 +270,7 @@ export default function Dashboard() {
 
 					<div style={{ marginTop: 12 }}>
 						<div style={{ fontSize: 12, opacity: 0.7 }}>Backend</div>
-						<div style={{ fontSize: 12, opacity: 0.7 }}>Last update: {new Date().toLocaleTimeString()}</div>
+						<div style={{ fontSize: 12, opacity: 0.7 }}>Last update: {lastUpdate || "--"}</div>
 					</div>
 				</div>
 			</section>
