@@ -5,6 +5,8 @@
  * Replace API_BASE_URL with your actual backend URL (e.g., http://localhost:3001 or https://api.aml.com)
  */
 
+"use client";
+
 // use same-origin API by default when running in browser; allows built-in Next.js API routes
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -109,6 +111,28 @@ export interface InstitutionRiskResponse {
   }>;
 }
 
+// case management types
+export interface CaseRecord {
+  id: string;
+  linkedAlerts: string[];
+  customer: string;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  investigator?: string;
+  status: 'new' | 'underReview' | 'escalated' | 'strSubmitted' | 'closed';
+  escalationLevel: number;
+  complianceDeadline: string;
+  slaRemainingHours: number;
+  overdue: boolean;
+}
+
+export interface CaseDiscussionResponse {
+  entries: Array<{ user: string; message: string; timestamp: string }>;
+}
+
+export interface CaseAuditResponse {
+  timeline: Array<{ event: string; user: string; timestamp: string; ip?: string }>;
+}
+
 // ============================================================================
 // API ENDPOINTS
 // ============================================================================
@@ -182,6 +206,52 @@ export const amlAPI = {
       body: JSON.stringify({ lifecycleStage }),
     });
     if (!response.ok) throw new Error('Failed to update alert');
+  },
+
+  /**
+   * Fetch case by ID
+   * GET /api/cases/:id
+   */
+  getCase: async (id: string): Promise<CaseRecord> => {
+    const response = await fetch(`${API_BASE_URL}/cases/${encodeURIComponent(id)}`);
+    if (!response.ok) throw new Error('Failed to fetch case');
+    return response.json();
+  },
+
+  /**
+   * Update case status
+   * PATCH /api/cases/:id
+   */
+  updateCaseStatus: async (id: string, status: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/cases/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!response.ok) throw new Error('Failed to update case');
+  },
+
+  /**
+   * Discussion entries
+   */
+  postCaseDiscussion: async (id: string, message: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/cases/${encodeURIComponent(id)}/discussion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    if (!response.ok) throw new Error('Failed to post discussion');
+  },
+  getCaseDiscussion: async (id: string): Promise<CaseDiscussionResponse> => {
+    const response = await fetch(`${API_BASE_URL}/cases/${encodeURIComponent(id)}/discussion`);
+    if (!response.ok) throw new Error('Failed to fetch discussion');
+    return response.json();
+  },
+
+  getCaseAudit: async (id: string): Promise<CaseAuditResponse> => {
+    const response = await fetch(`${API_BASE_URL}/cases/${encodeURIComponent(id)}/audit`);
+    if (!response.ok) throw new Error('Failed to fetch audit timeline');
+    return response.json();
   },
 
   /**
