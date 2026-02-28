@@ -142,16 +142,46 @@ export const amlAPI = {
    * GET /api/alerts?page=1&pageSize=20&severity=all&sortBy=slsRemaining
    * Required query params: page, pageSize, severity, sortBy
    */
-  getAlerts: async (page: number = 1, pageSize: number = 20, severity: string = 'all'): Promise<AlertsListResponse> => {
+  // fetch alerts with optional filtering
+  getAlerts: async (
+    page: number = 1,
+    pageSize: number = 20,
+    filters: {
+      severity?: string;
+      detectionType?: string;
+      lifecycleStage?: string;
+      institution?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      amountMin?: string;
+      amountMax?: string;
+    } = {}
+  ): Promise<AlertsListResponse> => {
     const params = new URLSearchParams({
       page: page.toString(),
       pageSize: pageSize.toString(),
-      severity,
       sortBy: 'slsRemaining',
+    });
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v != null && v !== '') params.set(k, v);
     });
     const response = await fetch(`${API_BASE_URL}/alerts?${params}`);
     if (!response.ok) throw new Error('Failed to fetch alerts');
     return response.json();
+  },
+
+  /**
+   * update lifecycle status for a specific alert
+   * PATCH /api/alerts/:id
+   * body: { lifecycleStage: string }
+   */
+  updateAlertLifecycle: async (id: string, lifecycleStage: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/alerts/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lifecycleStage }),
+    });
+    if (!response.ok) throw new Error('Failed to update alert');
   },
 
   /**
