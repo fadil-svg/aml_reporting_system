@@ -126,10 +126,30 @@ export default function AlertManagement() {
                         <option value="core">Core</option>
                     </select>
                     <input type="text" value={filters.institution} onChange={(e) => updateFilter("institution", e.target.value)} placeholder="Institution" style={{ padding: 6, borderRadius: 4 }} />
-                    <input type="number" value={filters.amountMin} onChange={(e) => updateFilter("amountMin", e.target.value)} placeholder="Min amount" style={{ padding: 6, borderRadius: 4 }} />
-                    <input type="number" value={filters.amountMax} onChange={(e) => updateFilter("amountMax", e.target.value)} placeholder="Max amount" style={{ padding: 6, borderRadius: 4 }} />
+                    <input
+                        type="number"
+                        value={filters.amountMin}
+                        onChange={(e) => updateFilter("amountMin", e.target.value)}
+                        placeholder="Min amount"
+                        className="whitePlaceholder"
+                        style={{ padding: 6, borderRadius: 4, background: "white" }}
+                    />
+                    <input
+                        type="number"
+                        value={filters.amountMax}
+                        onChange={(e) => updateFilter("amountMax", e.target.value)}
+                        placeholder="Max amount"
+                        className="whitePlaceholder"
+                        style={{ padding: 6, borderRadius: 4, background: "white" }}
+                    />
                 </div>
             </section>
+
+            <style jsx>{`
+                .whitePlaceholder::placeholder {
+                    color: black;
+                }
+            `}</style>
 
             {/* alerts table */}
             {loading ? (

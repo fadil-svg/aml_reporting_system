@@ -83,9 +83,8 @@ export default function Dashboard() {
 				<div style={{ padding: 12, background: "#111827", color: "white", borderRadius: 6 }}>
 					<div style={{ fontSize: 12, opacity: 0.8 }}>Overdue Cases</div>
 					<div style={{ fontSize: 20, fontWeight: 700, color: d.overdueCases ? "#ef4444" : "#10b981" }}>{d.overdueCases}</div>
-					<div style={{ fontSize: 12, marginTop: 6 }}>SLA: {d.slaCountdown}</div>
+					<div style={{ fontSize: 12, marginTop: 6, color:"white" }}>SLA: {d.slaCountdown }</div>
 				</div>
-
 				<div style={{ padding: 12, background: "#111827", color: "white", borderRadius: 6 }}>
 					<div style={{ fontSize: 12, opacity: 0.8 }}>STR Submitted Today</div>
 					<div style={{ fontSize: 20, fontWeight: 700 }}>{d.strSubmittedToday}</div>
