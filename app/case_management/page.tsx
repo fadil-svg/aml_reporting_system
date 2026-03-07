@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { amlAPI, CaseRecord } from "../../AML_frontend/services/api";
 
 
@@ -8,8 +8,21 @@ export default function CaseManagement() {
   const [caseData, setCaseData] = useState<CaseRecord | null>(null);
   const [newStatus, setNewStatus] = useState<CaseRecord["status"]>("new");
   const [discussion, setDiscussion] = useState<string[]>([]);
+  const [newMessage, setNewMessage] = useState<string>("");
   const [attachments, setAttachments] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState<string>("");
   const [audit, setAudit] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const buttonBaseStyle: React.CSSProperties = {
+    cursor: "pointer",
+    border: "1px solid white",
+    borderRadius: 4,
+    background: "transparent",
+    padding: "6px 10px",
+    color: "#f9fafb",
+  };
 
   // mock load
   React.useEffect(() => {
@@ -86,23 +99,142 @@ export default function CaseManagement() {
               <div style={{ maxHeight: 120, overflowY: "auto", background: "#111827", padding: 8, borderRadius: 4 }}>
                 {discussion.map((msg, idx) => <div key={idx}>{msg}</div>)}
               </div>
-              <textarea id="newMsg" style={{ width: "100%", marginTop: 8 }} placeholder="Add note..." />
-              <button style={{ marginTop: 4 }} onClick={async () => {
-                const txt = (document.getElementById('newMsg') as HTMLTextAreaElement).value;
-                if (txt && caseData) {
-                  await amlAPI.postCaseDiscussion(caseData.id, txt);
-                  setDiscussion([...discussion, txt]);
-                }
-              }}>Post</button>
+              <textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                style={{ width: "100%", marginTop: 8 }}
+                placeholder="Add note..."
+              />
+              <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", cursor:"pointer" }}>
+                <button
+                  style={{ ...buttonBaseStyle, flex: 1, minWidth: 120 }}
+                  onClick={async () => {
+                    if (newMessage.trim() && caseData) {
+                      await amlAPI.postCaseDiscussion(caseData.id, newMessage.trim());
+                      setDiscussion([...discussion, `You: ${newMessage.trim()}`]);
+                      setNewMessage("");
+                    }
+                  }}
+                >
+                  Post
+                </button>
+                <button
+                  style={{
+                    ...buttonBaseStyle,
+                    flex: 1,
+                    minWidth: 160,
+                    opacity: (!caseData || caseData.status === "escalated" || caseData.status === "strSubmitted" || caseData.status === "closed") ? 0.5 : 1,
+                  }}
+                  disabled={!caseData || caseData.status === "escalated" || caseData.status === "strSubmitted" || caseData.status === "closed" }
+                  onClick={async () => {
+                    if (!caseData) return;
+                    try {
+                      await updateStatus("escalated");
+                      setCaseData({
+                        ...caseData,
+                        status: "escalated",
+                        escalationLevel: caseData.escalationLevel + 1,
+                      });
+                      setDiscussion([...discussion, "System: Escalated to STR module."]);
+                    } catch (err) {
+                      console.error(err);
+                      alert("Failed to escalate case. See console for details.");
+                    }
+                  }}
+                >
+                  Escalate to STR
+                </button>
+              </div>
 
               <h3>Attachments</h3>
-              <div>
-                {attachments.map((a, i) => <div key={i}>{a}</div>)}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {attachments.map((a, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>{a}</span>
+                    <button
+                      style={{
+                        ...buttonBaseStyle,
+                        fontSize: 12,
+                        padding: "2px 6px",
+                      }}
+                      onClick={() => setAttachments(attachments.filter((_, idx) => idx !== i))}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setAttachments([...attachments, file.name]);
+                    }
+                    // Clear so same file can be selected again
+                    e.target.value = "";
+                  }}
+                />
+                <button
+                  style={{
+                    cursor: "pointer",
+                    border: "1px solid white",
+                    borderRadius: 4,
+                    background: "transparent",
+                    padding: "6px 10px",
+                    color: "#f9fafb",
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Upload document
+                </button>
               </div>
-              <button style={{ marginTop: 8 }}>Upload document</button>
 
               <h3>Tags</h3>
-              <div>[tagging control placeholder]</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+                {tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: 12,
+                      background: "#1f2937",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    {tag}
+                    <button
+                      style={{ fontSize: 10, padding: "2px 4px", cursor: "pointer" }}
+                      onClick={() => setTags(tags.filter((_, i) => i !== idx))}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  placeholder="Add tag"
+                  style={{ flex: 1, padding: 6, background: "#111827", color: "#f9fafb", border: "1px solid #334155", borderRadius: 4 }}
+                />
+                <button
+                  style={buttonBaseStyle}
+                  onClick={() => {
+                    const tag = newTag.trim();
+                    if (tag) {
+                      setTags([...tags, tag]);
+                      setNewTag("");
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
             </section>
 
             {/* audit timeline */}
